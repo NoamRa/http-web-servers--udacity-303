@@ -31,16 +31,22 @@ class MessageHandler(BaseHTTPRequestHandler):
 
         # Read the correct amount of data from the request.
         data = self.rfile.read(length).decode()
+
         # Extract the "message" field from the request data.
-        message = parse_qs(data)["message"][0]
+        if len(data) >= 9 :
+            message = parse_qs(data)["message"][0]
 
-        # Escape HTML tags in the message so users can't break world+dog.
-        message = message.replace("<", "&lt;")
+            # Escape HTML tags in the message so users can't break world+dog.
+            message = message.replace("<", "&lt;")
 
-        # Store it in memory.
-        memory.append(message)
+            # Store it in memory.
+            memory.append(message)
 
         # 1. Send a 303 redirect back to the root page.
+        self.send_response(303)
+        self.send_header('Content-type', 'text/html; charset=utf-8')
+        self.send_header('Location', '/')
+        self.end_headers()        
 
     def do_GET(self):
         # First, send a 200 OK response.
@@ -51,8 +57,10 @@ class MessageHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         # 2. Put the response together out of the form and the stored messages.
+        page = form.format("\n".join(memory))
 
         # 3. Send the response.
+        self.wfile.write(page.encode())
 
 if __name__ == '__main__':
     server_address = ('', 8000)
